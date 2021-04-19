@@ -1,10 +1,10 @@
 # Install PHP Apache
 FROM php:8-apache
 
-# Install composer
+# Allow composer superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Install git, unzip & zip & composer
+# Install git, gnupg, unzip, zip
 RUN apt-get update -qq && \ 
 	apt-get install -qy \
 	libxml2-dev \
@@ -12,17 +12,16 @@ RUN apt-get update -qq && \
 	git \
 	gnupg \
 	unzip \
-	zip
+	zip && \
+	curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN	curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
-RUN composer --version
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
 
 # Install PHP extensions
 RUN docker-php-ext-install -j$(nproc) opcache mysqli pdo_mysql pdo_pgsql pgsql session soap
-RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql
+# RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql
 
 # Config PHP
 COPY conf/php.ini /usr/local/etc/php/conf.d/app.ini
